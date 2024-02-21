@@ -1,0 +1,285 @@
+[
+    {
+        "id": "479bd8f14cdbcda4",
+        "type": "tab",
+        "label": "BrandMeister data",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "d83789a325eb4c70",
+        "type": "socketio-connector",
+        "z": "479bd8f14cdbcda4",
+        "server": "9e9e65fe64020d5b",
+        "namespace": "",
+        "name": "BM LH",
+        "x": 90,
+        "y": 40,
+        "wires": [
+            [
+                "69709a9324f4f5ef"
+            ]
+        ]
+    },
+    {
+        "id": "69709a9324f4f5ef",
+        "type": "socketio-listener",
+        "z": "479bd8f14cdbcda4",
+        "eventname": "mqtt",
+        "name": "",
+        "x": 270,
+        "y": 40,
+        "wires": [
+            [
+                "334ff84f4e4fdd33"
+            ]
+        ]
+    },
+    {
+        "id": "334ff84f4e4fdd33",
+        "type": "change",
+        "z": "479bd8f14cdbcda4",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 560,
+        "y": 40,
+        "wires": [
+            [
+                "61efbe1e1a523558"
+            ]
+        ]
+    },
+    {
+        "id": "61efbe1e1a523558",
+        "type": "json",
+        "z": "479bd8f14cdbcda4",
+        "name": "",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 830,
+        "y": 40,
+        "wires": [
+            [
+                "a731646912e15013"
+            ]
+        ]
+    },
+    {
+        "id": "362bbed896ed71ac",
+        "type": "change",
+        "z": "479bd8f14cdbcda4",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload.Duration",
+                "pt": "msg",
+                "to": "msg.payload.Stop - msg.payload.Start",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 470,
+        "y": 120,
+        "wires": [
+            [
+                "7798568b0e965ebc"
+            ]
+        ]
+    },
+    {
+        "id": "a731646912e15013",
+        "type": "switch",
+        "z": "479bd8f14cdbcda4",
+        "name": "Is Stop=0?",
+        "property": "payload.Stop",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "0",
+                "vt": "num"
+            },
+            {
+                "t": "gt",
+                "v": "0",
+                "vt": "num"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 110,
+        "y": 120,
+        "wires": [
+            [],
+            [
+                "362bbed896ed71ac"
+            ]
+        ]
+    },
+    {
+        "id": "7798568b0e965ebc",
+        "type": "switch",
+        "z": "479bd8f14cdbcda4",
+        "name": "Call minimum 5s",
+        "property": "payload.Duration",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "gte",
+                "v": "5",
+                "vt": "num"
+            },
+            {
+                "t": "lt",
+                "v": "5",
+                "vt": "num"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 790,
+        "y": 120,
+        "wires": [
+            [
+                "927d29b31b7275b4"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "927d29b31b7275b4",
+        "type": "switch",
+        "z": "479bd8f14cdbcda4",
+        "name": "Check if voice and group call",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "jsonata_exp",
+                "v": "\"Voice\" in payload.CallTypes[] and \"Group\" in payload.CallTypes[] and \"Call\" in payload.CallTypes[]",
+                "vt": "jsonata"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 160,
+        "y": 200,
+        "wires": [
+            [
+                "29df5625e4c94721"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "8c9fac04209ede8f",
+        "type": "template",
+        "z": "479bd8f14cdbcda4",
+        "name": "Insert call query",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "insert into brandmeister.lastheard (SourceCall, SourceID, DestinationID, TalkerAlias, Duration) values (\"{{payload.SourceCall}}\", {{payload.SourceID}}, {{payload.DestinationID}}, \"{{payload.TalkerAlias}}\", {{payload.Duration}});",
+        "output": "str",
+        "x": 840,
+        "y": 200,
+        "wires": [
+            [
+                "2f071dc10e393309"
+            ]
+        ]
+    },
+    {
+        "id": "29df5625e4c94721",
+        "type": "switch",
+        "z": "479bd8f14cdbcda4",
+        "name": "Exclude local and regional TGs",
+        "property": "payload.DestinationID",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "9",
+                "vt": "num"
+            },
+            {
+                "t": "eq",
+                "v": "8",
+                "vt": "num"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 3,
+        "x": 490,
+        "y": 200,
+        "wires": [
+            [],
+            [],
+            [
+                "8c9fac04209ede8f"
+            ]
+        ]
+    },
+    {
+        "id": "2f071dc10e393309",
+        "type": "mysql",
+        "z": "479bd8f14cdbcda4",
+        "mydb": "03f6060eb4134022",
+        "name": "brandmeister",
+        "x": 1170,
+        "y": 200,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "9e9e65fe64020d5b",
+        "type": "socketio-client-config",
+        "host": "https://api.brandmeister.network",
+        "port": "",
+        "path": "/lh/socket.io",
+        "reconnection": true,
+        "token": ""
+    },
+    {
+        "id": "03f6060eb4134022",
+        "type": "MySQLdatabase",
+        "name": "brandmeister",
+        "host": "192.168.1.5",
+        "port": "3306",
+        "db": "brandmeister",
+        "tz": "",
+        "charset": "UTF8"
+    }
+]
