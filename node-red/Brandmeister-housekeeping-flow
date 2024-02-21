@@ -1,0 +1,433 @@
+[
+    {
+        "id": "336c2aaafeab8ec2",
+        "type": "tab",
+        "label": "BrandMeister Housekeeping",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "b65f6e65d504214f",
+        "type": "mysql",
+        "z": "336c2aaafeab8ec2",
+        "mydb": "03f6060eb4134022",
+        "name": "brandmeister",
+        "x": 1390,
+        "y": 160,
+        "wires": [
+            [
+                "0612dc00efa2255b"
+            ]
+        ]
+    },
+    {
+        "id": "ed50b0d68fd64206",
+        "type": "inject",
+        "z": "336c2aaafeab8ec2",
+        "name": "At 02:00 every night",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "00 02 * * *",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 160,
+        "y": 260,
+        "wires": [
+            [
+                "ebd224733cd93cd3",
+                "09bda349c657ff79"
+            ]
+        ]
+    },
+    {
+        "id": "ebd224733cd93cd3",
+        "type": "moment",
+        "z": "336c2aaafeab8ec2",
+        "name": "Set date 90 days ago",
+        "topic": "",
+        "input": "",
+        "inputType": "date",
+        "inTz": "Europe/Madrid",
+        "adjAmount": "90",
+        "adjType": "days",
+        "adjDir": "subtract",
+        "format": "YYYY-MM-DD HH:MM:SS",
+        "locale": "en-US",
+        "output": "payload",
+        "outputType": "msg",
+        "outTz": "Europe/Madrid",
+        "x": 460,
+        "y": 260,
+        "wires": [
+            [
+                "d71f311b3c3eec2f"
+            ]
+        ]
+    },
+    {
+        "id": "d71f311b3c3eec2f",
+        "type": "template",
+        "z": "336c2aaafeab8ec2",
+        "name": "Delete records older than 60 days",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "DELETE from brandmeister.lastheard WHERE timestamp < \"{{payload}}\"",
+        "output": "str",
+        "x": 880,
+        "y": 260,
+        "wires": [
+            [
+                "b65f6e65d504214f"
+            ]
+        ]
+    },
+    {
+        "id": "f872cd1c22c0f289",
+        "type": "inject",
+        "z": "336c2aaafeab8ec2",
+        "name": "at 02:10 every night",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "10 02 * * *",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 160,
+        "y": 320,
+        "wires": [
+            [
+                "ecc9c7955ee3869a",
+                "a189996d10b7c9aa"
+            ]
+        ]
+    },
+    {
+        "id": "ecc9c7955ee3869a",
+        "type": "moment",
+        "z": "336c2aaafeab8ec2",
+        "name": "Set date to yesterday",
+        "topic": "",
+        "input": "",
+        "inputType": "date",
+        "inTz": "Europe/Madrid",
+        "adjAmount": "1",
+        "adjType": "days",
+        "adjDir": "subtract",
+        "format": "YYYY-MM-DD",
+        "locale": "en-US",
+        "output": "payload",
+        "outputType": "msg",
+        "outTz": "Europe/Madrid",
+        "x": 460,
+        "y": 380,
+        "wires": [
+            [
+                "30ce8f51ea345292",
+                "82eb1c5785522399"
+            ]
+        ]
+    },
+    {
+        "id": "30ce8f51ea345292",
+        "type": "template",
+        "z": "336c2aaafeab8ec2",
+        "name": "Daily cumulative TG stats query",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "insert into brandmeister.dailybyTG(date, numqso, destinationID) \n  select DATE(timestamp) as qsodate, count(*) AS numqsos, destinationID from brandmeister.lastheard \n    where DATE(timestamp) = \"{{payload}}\" \n    group by qsodate, destinationID ",
+        "output": "str",
+        "x": 870,
+        "y": 380,
+        "wires": [
+            [
+                "b65f6e65d504214f"
+            ]
+        ]
+    },
+    {
+        "id": "82eb1c5785522399",
+        "type": "template",
+        "z": "336c2aaafeab8ec2",
+        "name": "Daily cumulative callsign stats query",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "insert into DailybyID(date, numqso, sourceCall, sourceID) \n  select DATE(timestamp) as qsodate, count(*) AS numqsos, sourceCall, SourceID from brandmeister.lastheard \n    where DATE(timestamp) < \"{{ payload }}\" \n    group by qsodate, destinationID ",
+        "output": "str",
+        "x": 890,
+        "y": 440,
+        "wires": [
+            [
+                "b65f6e65d504214f"
+            ]
+        ]
+    },
+    {
+        "id": "9852994efd23672b",
+        "type": "inject",
+        "z": "336c2aaafeab8ec2",
+        "name": "Every minute",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "60",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 140,
+        "y": 80,
+        "wires": [
+            [
+                "f716b8e22c5a8954",
+                "b4527d1f659678d5"
+            ]
+        ]
+    },
+    {
+        "id": "f716b8e22c5a8954",
+        "type": "template",
+        "z": "336c2aaafeab8ec2",
+        "name": "Clean out non-existing TGs every minute",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "delete\n  from lastheard \n  where NOT EXISTS \n   (select number from TGs where lastheard.DestinationID = TGs.number)",
+        "output": "str",
+        "x": 900,
+        "y": 80,
+        "wires": [
+            [
+                "b65f6e65d504214f"
+            ]
+        ]
+    },
+    {
+        "id": "aec799673bcf13ae",
+        "type": "csv",
+        "z": "336c2aaafeab8ec2",
+        "name": "",
+        "sep": ",",
+        "hdrin": true,
+        "hdrout": "none",
+        "multi": "one",
+        "ret": "\\n",
+        "temp": "",
+        "skip": "0",
+        "strings": true,
+        "include_empty_strings": "",
+        "include_null_values": "",
+        "x": 690,
+        "y": 320,
+        "wires": [
+            [
+                "c34ca41d609c1439"
+            ]
+        ]
+    },
+    {
+        "id": "09bda349c657ff79",
+        "type": "http request",
+        "z": "336c2aaafeab8ec2",
+        "name": "Get TGs CSV",
+        "method": "GET",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "https://w0chp.radio/brandmeister-talkgroups/brandmeister-talkgroups.csv",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 440,
+        "y": 320,
+        "wires": [
+            [
+                "aec799673bcf13ae"
+            ]
+        ]
+    },
+    {
+        "id": "c34ca41d609c1439",
+        "type": "template",
+        "z": "336c2aaafeab8ec2",
+        "name": "",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "insert into brandmeister.TGs (number, name) values ({{payload.Talkgroup Number}}, \"{{payload.Talkgroup Name}}\") ON DUPLICATE KEY UPDATE name=\"{{payload.Talkgroup Name}}\";",
+        "output": "str",
+        "x": 940,
+        "y": 320,
+        "wires": [
+            [
+                "b65f6e65d504214f"
+            ]
+        ]
+    },
+    {
+        "id": "a189996d10b7c9aa",
+        "type": "http request",
+        "z": "336c2aaafeab8ec2",
+        "name": "Get / update complete RadioID DB",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://radioid.net/static/users.json",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 440,
+        "y": 480,
+        "wires": [
+            [
+                "088910dd68c8ab24"
+            ]
+        ]
+    },
+    {
+        "id": "088910dd68c8ab24",
+        "type": "split",
+        "z": "336c2aaafeab8ec2",
+        "name": "Separate array from message",
+        "splt": "\\n",
+        "spltType": "str",
+        "arraySplt": 1,
+        "arraySpltType": "len",
+        "stream": false,
+        "addname": "",
+        "x": 450,
+        "y": 540,
+        "wires": [
+            [
+                "9e8e48be635e26d7"
+            ]
+        ]
+    },
+    {
+        "id": "9e8e48be635e26d7",
+        "type": "split",
+        "z": "336c2aaafeab8ec2",
+        "name": "Separate individual entries",
+        "splt": "\\n",
+        "spltType": "str",
+        "arraySplt": 1,
+        "arraySpltType": "len",
+        "stream": false,
+        "addname": "",
+        "x": 440,
+        "y": 600,
+        "wires": [
+            [
+                "9bc4524758dad5fd"
+            ]
+        ]
+    },
+    {
+        "id": "9bc4524758dad5fd",
+        "type": "template",
+        "z": "336c2aaafeab8ec2",
+        "name": "Create SQL Insert / Update query",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "REPLACE INTO brandmeister.users VALUES (\"{{payload.fname}}\", \"{{payload.name}}\", \"{{payload.country}}\", \"{{payload.callsign}}\", \"{{payload.city}}\", \"{{payload.surname}}\", {{payload.radio_id}}, {{payload.id}}, \"{{payload.state}}\");",
+        "output": "str",
+        "x": 880,
+        "y": 500,
+        "wires": [
+            [
+                "b65f6e65d504214f"
+            ]
+        ]
+    },
+    {
+        "id": "0612dc00efa2255b",
+        "type": "debug",
+        "z": "336c2aaafeab8ec2",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1380,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "b4527d1f659678d5",
+        "type": "template",
+        "z": "336c2aaafeab8ec2",
+        "name": "Preserve identity of war heroes",
+        "field": "topic",
+        "fieldType": "msg",
+        "format": "handlebars",
+        "syntax": "mustache",
+        "template": "delete \n  from lastheard \n     where SourceCall = \"DL5FLN\" \n     order by timestamp DESC",
+        "output": "str",
+        "x": 870,
+        "y": 140,
+        "wires": [
+            [
+                "b65f6e65d504214f"
+            ]
+        ]
+    },
+    {
+        "id": "03f6060eb4134022",
+        "type": "MySQLdatabase",
+        "name": "brandmeister",
+        "host": "192.168.1.5",
+        "port": "3306",
+        "db": "brandmeister",
+        "tz": "",
+        "charset": "UTF8"
+    }
+]
