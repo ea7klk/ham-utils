@@ -1,0 +1,45 @@
+<div id="calculator-container" style="font-family: var(--gh-font-body, 'Merriweather'); text-align: center;"></div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const app = document.getElementById("calculator-container");
+    if (!app) return;
+
+    app.innerHTML = `
+        <h1 style="font-weight: bold;">Calculadora de pérdidas de cable</h1>
+        <form id="calculatorForm" style="font-weight: normal;">
+            <label for="inputPower">Potencia de entrada (P<sub>in</sub>): </label>
+            <input type="number" id="inputPower" step="any" required> W<br><br>
+
+            <label for="gainLoss">Pérdida por 100m de coaxial de la tabla (α): </label>
+            <input type="number" id="gainLoss" step="any" required> dB<br><br>
+
+            <label for="cableLength">Longitud de coaxial: </label>
+            <input type="number" id="cableLength" step="any" required> metros<br><br>
+
+            <button type="button" id="calculateButton">Calcula</button>
+        </form>
+
+        <h2 style="font-weight: normal;">Resultado</h2>
+        <p id="outputPower" style="font-weight: normal;">Potencia de salida (P<sub>out</sub>): </p>
+    `;
+
+    document.getElementById("calculateButton").addEventListener("click", () => {
+        const inputPower = parseFloat(document.getElementById("inputPower").value);
+        const gainLossPer100 = parseFloat(document.getElementById("gainLoss").value);
+        const cableLength = parseFloat(document.getElementById("cableLength").value);
+
+        if (isNaN(inputPower) || isNaN(gainLossPer100) || isNaN(cableLength)) {
+            alert("Por favor, introduzca números válidos para la potencia de entrada, la pérdida y la longitud del cable.");
+            return;
+        }
+
+        // Calcular el factor de pérdida total para la longitud de cable proporcionada
+        const totalLossDb = (gainLossPer100 / 100) * cableLength;
+        const k = Math.pow(10, -totalLossDb / 10);
+
+        const outputPower = k * inputPower;
+        document.getElementById("outputPower").innerHTML = `Potencia de salida (P<sub>out</sub>): ${outputPower.toFixed(4)} W`;
+    });
+});
+</script>
